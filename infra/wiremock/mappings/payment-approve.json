@@ -1,0 +1,19 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/v1/payments"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "paymentKey": "pay_mock",
+      "orderId": "ord_mock",
+      "status": "APPROVED"
+    }
+  }
+}
+
+
