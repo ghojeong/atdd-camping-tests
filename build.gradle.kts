@@ -127,6 +127,18 @@ tasks.register<Exec>("cloneKiosk") {
         "https://github.com/next-step/atdd-camping-kiosk.git",
         "repos/atdd-camping-kiosk"
     )
+    doLast {
+        copy {
+            from("infra/configs/kiosk-application.yml")
+            into("repos/atdd-camping-kiosk/src/main/resources")
+            rename { "application.yml" }
+        }
+        copy {
+            from("infra/configs/kiosk-build.gradle")
+            into("repos/atdd-camping-kiosk")
+            rename { "build.gradle" }
+        }
+    }
 }
 
 tasks.register<Exec>("cloneAdmin") {
@@ -144,6 +156,18 @@ tasks.register<Exec>("cloneAdmin") {
         "https://github.com/next-step/atdd-camping-admin.git",
         "repos/atdd-camping-admin"
     )
+    doLast {
+        copy {
+            from("infra/configs/admin-application.yml")
+            into("repos/atdd-camping-admin/src/main/resources")
+            rename { "application.yml" }
+        }
+        copy {
+            from("infra/configs/admin-build.gradle")
+            into("repos/atdd-camping-admin")
+            rename { "build.gradle" }
+        }
+    }
 }
 
 tasks.register<Exec>("cloneReservation") {
@@ -161,4 +185,16 @@ tasks.register<Exec>("cloneReservation") {
         "https://github.com/next-step/atdd-camping-reservation.git",
         "repos/atdd-camping-reservation"
     )
+    doLast {
+        copy {
+            from("infra/configs/reservation-application.yml")
+            into("repos/atdd-camping-reservation/src/main/resources")
+            rename { "application.yml" }
+        }
+        copy {
+            from("infra/configs/reservation-build.gradle")
+            into("repos/atdd-camping-reservation")
+            rename { "build.gradle" }
+        }
+    }
 }

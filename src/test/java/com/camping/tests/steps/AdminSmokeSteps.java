@@ -21,7 +21,7 @@ public class AdminSmokeSteps {
 
     @When("Admin 서비스의 헬스 체크를 요청한다")
     public void adminHealthCheck() {
-        response = given().when().get("/");
+        response = given().when().get("/login");
         assertNotNull(response, "응답이 null입니다");
         CommonSteps.setCurrentResponse(response);
     }

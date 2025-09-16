@@ -9,7 +9,7 @@
 # 컨테이너 기동
 ./gradlew allUp
 
-# 테스트 실행 (KIOSK_BASE_URL 환경변수 설정)
+# 테스트 실행
 ./gradlew test
 
 # 컨테이너 종료
