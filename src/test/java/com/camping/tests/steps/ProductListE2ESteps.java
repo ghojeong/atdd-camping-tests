@@ -1,9 +1,11 @@
 package com.camping.tests.steps;
 
+import com.camping.tests.utils.AuthenticationHelper;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -13,7 +15,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class ProductListE2ESteps {
     private final String adminBaseUrl;
     private final String kioskBaseUrl;
-    private Response loginResponse;
     private Response productListResponse;
     private String authToken;
 
@@ -30,7 +31,7 @@ public class ProductListE2ESteps {
 
     @Given("Admin에서 로그인을 한다")
     public void adminLogin() {
-        loginResponse = given()
+        Response loginResponse = given()
                 .baseUri(adminBaseUrl)
                 .contentType("application/json")
                 .body("{\"username\":\"admin\",\"password\":\"password\"}")
@@ -39,37 +40,20 @@ public class ProductListE2ESteps {
 
         assertNotNull(loginResponse, "로그인 응답이 null입니다");
 
-        // 응답에서 인증 토큰/쿠키 추출 (실제 구현에 따라 달라질 수 있음)
-        if (loginResponse.statusCode() == 200) {
-            // 쿠키 방식인 경우
-            authToken = loginResponse.getCookie("JSESSIONID");
-            if (authToken == null) {
-                // 헤더 방식인 경우
-                authToken = loginResponse.getHeader("Authorization");
-            }
-            if (authToken == null) {
-                // JSON 바디에서 토큰 추출하는 경우
-                authToken = loginResponse.jsonPath().getString("token");
-            }
+        if (loginResponse.statusCode() != 200) {
+            return;
         }
+        authToken = AuthenticationHelper.extractAuthToken(loginResponse);
+    }
+
+    private RequestSpecification createAuthenticatedRequest(String baseUrl) {
+        RequestSpecification requestSpec = given().baseUri(baseUrl);
+        return AuthenticationHelper.addAuthToRequest(requestSpec, authToken);
     }
 
     @When("Kiosk에서 상품 목록을 요청한다")
     public void requestProductList() {
-        var requestSpec = given()
-                .baseUri(kioskBaseUrl);
-
-        // 인증 정보 추가 (토큰이 있는 경우)
-        if (authToken != null) {
-            if (authToken.startsWith("Bearer ")) {
-                requestSpec = requestSpec.header("Authorization", authToken);
-            } else {
-                // 쿠키 방식
-                requestSpec = requestSpec.cookie("JSESSIONID", authToken);
-            }
-        }
-
-        productListResponse = requestSpec
+        productListResponse = createAuthenticatedRequest(kioskBaseUrl)
                 .when()
                 .get("/api/products");
 

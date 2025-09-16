@@ -1,15 +1,15 @@
 package com.camping.tests.steps;
 
+import com.camping.tests.utils.AuthenticationHelper;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -37,21 +37,59 @@ public class PaymentE2ESteps {
         if (authToken != null) {
             return;
         }
-        Response loginResponse = given()
-                .baseUri(adminBaseUrl)
-                .contentType("application/json")
-                .body("{\"username\":\"admin\",\"password\":\"password\"}")
-                .when()
-                .post("/auth/login");
-        if (loginResponse.statusCode() != 200) {
-            return;
-        }
-        authToken = loginResponse.getCookie("JSESSIONID");
-        if (authToken == null) {
-            authToken = loginResponse.getHeader("Authorization");
-        }
-        if (authToken == null) {
-            authToken = loginResponse.jsonPath().getString("token");
+        authToken = AuthenticationHelper.performLogin(adminBaseUrl);
+    }
+
+    private RequestSpecification createAuthenticatedRequest(String baseUrl) {
+        ensureAuthenticated();
+        RequestSpecification requestSpec = given()
+                .baseUri(baseUrl)
+                .contentType("application/json");
+        return AuthenticationHelper.addAuthToRequest(requestSpec, authToken);
+    }
+
+    private String createPaymentRequestBody(int unitPrice) {
+        return String.format(
+                """
+                        {
+                            "items": [
+                                {
+                                    "productId": 1,
+                                    "quantity": 1,
+                                    "unitPrice": %d,
+                                    "productName": "Test Product"
+                                }
+                            ],
+                            "paymentMethod": "CARD"
+                        }
+                        """, unitPrice
+        );
+    }
+
+    private String createConfirmRequestBody(String paymentKey, String orderId, int amount) {
+        return String.format(
+                """
+                        {
+                            "paymentKey": "%s",
+                            "orderId": "%s",
+                            "amount": %d,
+                            "items": [
+                                {
+                                    "productId": 1,
+                                    "quantity": 1,
+                                    "unitPrice": %d,
+                                    "productName": "Test Product"
+                                }
+                            ]
+                        }
+                        """, paymentKey, orderId, amount, amount
+        );
+    }
+
+    private void extractPaymentInfo() {
+        if (paymentResponse.statusCode() == 200) {
+            paymentKey = paymentResponse.jsonPath().getString("paymentKey");
+            orderId = paymentResponse.jsonPath().getString("orderId");
         }
     }
 
@@ -64,82 +102,22 @@ public class PaymentE2ESteps {
 
     @When("Kiosk에서 결제를 요청한다")
     public void requestPayment() {
-        ensureAuthenticated();
+        String paymentRequestBody = createPaymentRequestBody(10000);
 
-        var requestSpec = given()
-                .baseUri(kioskBaseUrl)
-                .contentType("application/json");
-
-        // 인증 정보 추가
-        if (authToken != null) {
-            if (authToken.startsWith("Bearer ")) {
-                requestSpec = requestSpec.header("Authorization", authToken);
-            } else {
-                requestSpec = requestSpec.cookie("JSESSIONID", authToken);
-            }
-        }
-
-        String paymentRequestBody = """
-                {
-                    "items": [
-                        {
-                            "productId": 1,
-                            "quantity": 1,
-                            "unitPrice": 10000,
-                            "productName": "Test Product"
-                        }
-                    ],
-                    "paymentMethod": "CARD"
-                }
-                """;
-
-        paymentResponse = requestSpec
+        paymentResponse = createAuthenticatedRequest(kioskBaseUrl)
                 .body(paymentRequestBody)
                 .when()
                 .post("/api/payments");
 
         assertNotNull(paymentResponse, "결제 응답이 null입니다");
-
-        // 성공한 경우 결제 키와 주문 ID 저장
-        if (paymentResponse.statusCode() == 200) {
-            paymentKey = paymentResponse.jsonPath().getString("paymentKey");
-            orderId = paymentResponse.jsonPath().getString("orderId");
-        }
+        extractPaymentInfo();
     }
 
     @When("Kiosk에서 실패하도록 결제를 요청한다")
     public void requestFailedPayment() {
-        ensureAuthenticated();
+        String paymentRequestBody = createPaymentRequestBody(99999);
 
-        var requestSpec = given()
-                .baseUri(kioskBaseUrl)
-                .contentType("application/json");
-
-        // 인증 정보 추가
-        if (authToken != null) {
-            if (authToken.startsWith("Bearer ")) {
-                requestSpec = requestSpec.header("Authorization", authToken);
-            } else {
-                requestSpec = requestSpec.cookie("JSESSIONID", authToken);
-            }
-        }
-
-        // 실패를 유도하는 특별한 금액(99999) 사용
-        String paymentRequestBody = """
-                {
-                    "items": [
-                        {
-                            "productId": 1,
-                            "quantity": 1,
-                            "unitPrice": 99999,
-                            "productName": "Test Product"
-                        }
-                    ],
-                    "paymentMethod": "CARD"
-                }
-                """;
-
-        paymentResponse = requestSpec
+        paymentResponse = createAuthenticatedRequest(kioskBaseUrl)
                 .body(paymentRequestBody)
                 .when()
                 .post("/api/payments");
@@ -149,40 +127,9 @@ public class PaymentE2ESteps {
 
     @When("Kiosk에서 결제 확인을 요청한다")
     public void requestPaymentConfirm() {
-        ensureAuthenticated();
+        String confirmRequestBody = createConfirmRequestBody(paymentKey, orderId, 10000);
 
-        var requestSpec = given()
-                .baseUri(kioskBaseUrl)
-                .contentType("application/json");
-
-        // 인증 정보 추가
-        if (authToken != null) {
-            if (authToken.startsWith("Bearer ")) {
-                requestSpec = requestSpec.header("Authorization", authToken);
-            } else {
-                requestSpec = requestSpec.cookie("JSESSIONID", authToken);
-            }
-        }
-
-        String confirmRequestBody = String.format(
-                """
-                        {
-                            "paymentKey": "%s",
-                            "orderId": "%s",
-                            "amount": 10000,
-                            "items": [
-                                {
-                                    "productId": 1,
-                                    "quantity": 1,
-                                    "unitPrice": 10000,
-                                    "productName": "Test Product"
-                                }
-                            ]
-                        }
-                        """, paymentKey, orderId
-        );
-
-        confirmResponse = requestSpec
+        confirmResponse = createAuthenticatedRequest(kioskBaseUrl)
                 .body(confirmRequestBody)
                 .when()
                 .post("/api/payments/confirm");
@@ -192,40 +139,9 @@ public class PaymentE2ESteps {
 
     @When("Kiosk에서 실패하도록 결제 확인을 요청한다")
     public void requestFailedPaymentConfirm() {
-        ensureAuthenticated();
+        String confirmRequestBody = createConfirmRequestBody(paymentKey, orderId, 99999);
 
-        var requestSpec = given()
-                .baseUri(kioskBaseUrl)
-                .contentType("application/json");
-
-        // 인증 정보 추가
-        if (authToken != null) {
-            if (authToken.startsWith("Bearer ")) {
-                requestSpec = requestSpec.header("Authorization", authToken);
-            } else {
-                requestSpec = requestSpec.cookie("JSESSIONID", authToken);
-            }
-        }
-
-        String confirmRequestBody = String.format(
-                """
-                        {
-                            "paymentKey": "%s",
-                            "orderId": "%s",
-                            "amount": 99999,
-                            "items": [
-                                {
-                                    "productId": 1,
-                                    "quantity": 1,
-                                    "unitPrice": 99999,
-                                    "productName": "Test Product"
-                                }
-                            ]
-                        }
-                        """, paymentKey, orderId
-        );
-
-        confirmResponse = requestSpec
+        confirmResponse = createAuthenticatedRequest(kioskBaseUrl)
                 .body(confirmRequestBody)
                 .when()
                 .post("/api/payments/confirm");
@@ -246,11 +162,11 @@ public class PaymentE2ESteps {
                 .body("paymentKey", notNullValue())
                 .body("orderId", notNullValue());
 
-        // amount는 success가 true일 때만 0보다 커야 함
         boolean success = paymentResponse.jsonPath().getBoolean("success");
-        if (success) {
-            paymentResponse.then().body("amount", greaterThan(0));
+        if (!success) {
+            return;
         }
+        paymentResponse.then().body("amount", greaterThan(0));
     }
 
     @Then("결제가 실패 응답을 받는다")
@@ -264,17 +180,10 @@ public class PaymentE2ESteps {
 
     @Then("오류 메시지가 응답에 포함된다")
     public void verifyErrorMessage() {
-        // 결제 확인 실패 시나리오에서는 confirmResponse를 확인해야 함
-        if (confirmResponse != null) {
-            confirmResponse.then()
-                    .body("success", equalTo(false))
-                    .body("message", notNullValue());
-        } else {
-            // 결제 생성 실패 시나리오에서는 paymentResponse를 확인
-            paymentResponse.then()
-                    .body("success", equalTo(false))
-                    .body("message", notNullValue());
-        }
+        Response responseToVerify = confirmResponse != null ? confirmResponse : paymentResponse;
+        responseToVerify.then()
+                .body("success", equalTo(false))
+                .body("message", notNullValue());
     }
 
     @Then("결제 확인이 성공적으로 처리된다")
@@ -289,11 +198,11 @@ public class PaymentE2ESteps {
                 .body("success", equalTo(true))
                 .body("transactionId", notNullValue());
 
-        // paidAmount는 success가 true일 때만 0보다 커야 함
         boolean success = confirmResponse.jsonPath().getBoolean("success");
-        if (success) {
-            confirmResponse.then().body("paidAmount", greaterThan(0));
+        if (!success) {
+            return;
         }
+        confirmResponse.then().body("paidAmount", greaterThan(0));
     }
 
     @Then("결제 확인이 실패 응답을 받는다")
