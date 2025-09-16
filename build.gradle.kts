@@ -37,20 +37,45 @@ tasks.test {
     useJUnitPlatform()
 }
 
-// Docker Compose tasks for kiosk
-tasks.register<Exec>("kioskComposeUp") {
+tasks.register<Exec>("infraUp") {
     group = "infra"
-    description = "Run kiosk via docker compose (build + up)"
+    description = "Start infrastructure (database with data initialization)"
+    commandLine(
+        "docker", "compose",
+        "-f", "infra/docker-compose-infra.yml",
+        "up", "-d"
+    )
+}
+
+tasks.register<Exec>("infraDown") {
+    group = "infra"
+    description = "Stop infrastructure and remove volumes"
+    commandLine(
+        "docker", "compose",
+        "-f", "infra/docker-compose-infra.yml",
+        "down", "-v"
+    )
+}
+
+tasks.register<Exec>("appsUp") {
+    group = "infra"
+    description = "Start application services (depends on infrastructure)"
+    dependsOn("infraUp")
+    mustRunAfter("infraUp")
     commandLine(
         "docker", "compose",
         "-f", "infra/docker-compose.yml",
         "up", "-d", "--build"
     )
+    doFirst {
+        // Wait for infrastructure to be ready
+        Thread.sleep(10000)
+    }
 }
 
-tasks.register<Exec>("kioskComposeDown") {
+tasks.register<Exec>("appsDown") {
     group = "infra"
-    description = "Stop kiosk compose and remove volumes"
+    description = "Stop application services"
     commandLine(
         "docker", "compose",
         "-f", "infra/docker-compose.yml",
@@ -58,12 +83,82 @@ tasks.register<Exec>("kioskComposeDown") {
     )
 }
 
-tasks.register<Exec>("kioskComposeLogs") {
+tasks.register("allUp") {
     group = "infra"
-    description = "Show kiosk compose logs"
+    description = "Start infrastructure and all application services"
+    dependsOn("infraUp", "appsUp")
+    mustRunAfter("infraUp")
+}
+
+tasks.register("allDown") {
+    group = "infra"
+    description = "Stop all services and remove volumes"
+    dependsOn("appsDown", "infraDown")
+}
+
+tasks.register<Exec>("appsLogs") {
+    group = "infra"
+    description = "Show application services logs"
     commandLine(
         "docker", "compose",
         "-f", "infra/docker-compose.yml",
         "logs", "-f"
+    )
+}
+
+tasks.register("cloneRepos") {
+    group = "setup"
+    description = "Clone all required repositories"
+    dependsOn("cloneKiosk", "cloneAdmin", "cloneReservation")
+}
+
+tasks.register<Exec>("cloneKiosk") {
+    group = "setup"
+    description = "Clone kiosk repository"
+    doFirst {
+        delete("repos/atdd-camping-kiosk")
+        mkdir("repos")
+    }
+    commandLine(
+        "git", "clone",
+        "--branch", "main",
+        "--single-branch",
+        "--depth", "1",
+        "https://github.com/next-step/atdd-camping-kiosk.git",
+        "repos/atdd-camping-kiosk"
+    )
+}
+
+tasks.register<Exec>("cloneAdmin") {
+    group = "setup"
+    description = "Clone admin repository"
+    doFirst {
+        delete("repos/atdd-camping-admin")
+        mkdir("repos")
+    }
+    commandLine(
+        "git", "clone",
+        "--branch", "main",
+        "--single-branch",
+        "--depth", "1",
+        "https://github.com/next-step/atdd-camping-admin.git",
+        "repos/atdd-camping-admin"
+    )
+}
+
+tasks.register<Exec>("cloneReservation") {
+    group = "setup"
+    description = "Clone reservation repository"
+    doFirst {
+        delete("repos/atdd-camping-reservation")
+        mkdir("repos")
+    }
+    commandLine(
+        "git", "clone",
+        "--branch", "main",
+        "--single-branch",
+        "--depth", "1",
+        "https://github.com/next-step/atdd-camping-reservation.git",
+        "repos/atdd-camping-reservation"
     )
 }
