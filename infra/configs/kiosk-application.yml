@@ -22,14 +22,14 @@ spring:
 
 kiosk:
   admin:
-    base-url: http://localhost:8080
+    base-url: ${KIOSK_ADMIN_BASE_URL:http://localhost:8080}
     auth:
       username: admin
       password: admin123
       login-path: /auth/login
       cookie-name: AUTH_TOKEN
   payment:
-    base-url: http://localhost:9090
+    base-url: ${KIOSK_PAYMENT_BASE_URL:http://localhost:9090}
     secret-key: ${PAYMENTS_SECRET_KEY:test_sk_dummy}
   discount:
     percent: 10

@@ -1,0 +1,29 @@
+{
+  "priority": 2,
+  "request": {
+    "method": "POST",
+    "urlPath": "/v1/payments/confirm",
+    "bodyPatterns": [
+      {
+        "doesNotContain": "\"amount\":99999"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "paymentKey": "pay_wiremock_confirmed",
+      "orderId": "ord_wiremock_confirmed",
+      "method": "CARD",
+      "approvedAt": "2025-09-17T10:00:00Z",
+      "totalAmount": 10000,
+      "status": "APPROVED",
+      "receipt": {
+        "url": "https://mock.receipt.com/receipt/pay_wiremock_confirmed"
+      }
+    }
+  }
+}

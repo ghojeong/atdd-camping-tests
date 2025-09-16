@@ -1,0 +1,24 @@
+{
+  "priority": 1,
+  "request": {
+    "method": "POST",
+    "urlPath": "/v1/payments/confirm",
+    "bodyPatterns": [
+      {
+        "contains": "\"amount\":99999"
+      }
+    ]
+  },
+  "response": {
+    "status": 500,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "error": {
+        "code": "PAYMENT_PROCESSING_ERROR",
+        "message": "결제 승인 처리 중 오류가 발생했습니다."
+      }
+    }
+  }
+}
