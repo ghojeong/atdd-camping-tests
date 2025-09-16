@@ -7,20 +7,20 @@ import io.restassured.response.Response;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class KioskSmokeSteps {
+public class AdminSmokeSteps {
     private Response response;
 
-    public KioskSmokeSteps() {
-        final String KIOSK_BASE_URL = "KIOSK_BASE_URL";
-        final String DEFAULT_URL = "http://localhost:18081";
+    public AdminSmokeSteps() {
+        final String ADMIN_BASE_URL = "ADMIN_BASE_URL";
+        final String DEFAULT_URL = "http://localhost:18082";
         RestAssured.baseURI = System.getProperty(
-                KIOSK_BASE_URL,
-                System.getenv().getOrDefault(KIOSK_BASE_URL, DEFAULT_URL)
+                ADMIN_BASE_URL,
+                System.getenv().getOrDefault(ADMIN_BASE_URL, DEFAULT_URL)
         );
     }
 
-    @When("Kiosk 서비스의 헬스 체크를 요청한다")
-    public void kioskHealthCheck() {
+    @When("Admin 서비스의 헬스 체크를 요청한다")
+    public void adminHealthCheck() {
         response = given().when().get("/");
         assertNotNull(response, "응답이 null입니다");
         CommonSteps.setCurrentResponse(response);
