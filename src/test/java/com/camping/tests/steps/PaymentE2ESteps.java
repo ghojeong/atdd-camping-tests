@@ -1,12 +1,15 @@
 package com.camping.tests.steps;
 
-import com.camping.tests.utils.AuthenticationHelper;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 
+import static com.camping.tests.utils.AuthenticationHelper.addAuthToRequest;
+import static com.camping.tests.utils.AuthenticationHelper.performLogin;
+import static com.camping.tests.utils.PaymentRequestHelper.createConfirmRequestBody;
+import static com.camping.tests.utils.PaymentRequestHelper.createPaymentRequestBody;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
@@ -37,7 +40,7 @@ public class PaymentE2ESteps {
         if (authToken != null) {
             return;
         }
-        authToken = AuthenticationHelper.performLogin(adminBaseUrl);
+        authToken = performLogin(adminBaseUrl);
     }
 
     private RequestSpecification createAuthenticatedRequest(String baseUrl) {
@@ -45,46 +48,9 @@ public class PaymentE2ESteps {
         RequestSpecification requestSpec = given()
                 .baseUri(baseUrl)
                 .contentType("application/json");
-        return AuthenticationHelper.addAuthToRequest(requestSpec, authToken);
+        return addAuthToRequest(requestSpec, authToken);
     }
 
-    private String createPaymentRequestBody(int unitPrice) {
-        return String.format(
-                """
-                        {
-                            "items": [
-                                {
-                                    "productId": 1,
-                                    "quantity": 1,
-                                    "unitPrice": %d,
-                                    "productName": "Test Product"
-                                }
-                            ],
-                            "paymentMethod": "CARD"
-                        }
-                        """, unitPrice
-        );
-    }
-
-    private String createConfirmRequestBody(String paymentKey, String orderId, int amount) {
-        return String.format(
-                """
-                        {
-                            "paymentKey": "%s",
-                            "orderId": "%s",
-                            "amount": %d,
-                            "items": [
-                                {
-                                    "productId": 1,
-                                    "quantity": 1,
-                                    "unitPrice": %d,
-                                    "productName": "Test Product"
-                                }
-                            ]
-                        }
-                        """, paymentKey, orderId, amount, amount
-        );
-    }
 
     private void extractPaymentInfo() {
         if (paymentResponse.statusCode() == 200) {

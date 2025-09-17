@@ -1,12 +1,13 @@
 package com.camping.tests.steps;
 
-import com.camping.tests.utils.AuthenticationHelper;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 
+import static com.camping.tests.utils.AuthenticationHelper.addAuthToRequest;
+import static com.camping.tests.utils.AuthenticationHelper.extractAuthToken;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasKey;
@@ -43,12 +44,12 @@ public class ProductListE2ESteps {
         if (loginResponse.statusCode() != 200) {
             return;
         }
-        authToken = AuthenticationHelper.extractAuthToken(loginResponse);
+        authToken = extractAuthToken(loginResponse);
     }
 
     private RequestSpecification createAuthenticatedRequest(String baseUrl) {
         RequestSpecification requestSpec = given().baseUri(baseUrl);
-        return AuthenticationHelper.addAuthToRequest(requestSpec, authToken);
+        return addAuthToRequest(requestSpec, authToken);
     }
 
     @When("Kiosk에서 상품 목록을 요청한다")
