@@ -1,5 +1,6 @@
 package com.camping.tests.steps;
 
+import com.camping.tests.config.TestConfiguration;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -14,26 +15,18 @@ import static org.hamcrest.Matchers.hasKey;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class ProductListE2ESteps {
-    private final String adminBaseUrl;
-    private final String kioskBaseUrl;
+    private final TestConfiguration testConfiguration;
     private Response productListResponse;
     private String authToken;
 
-    public ProductListE2ESteps() {
-        this.adminBaseUrl = System.getProperty(
-                "ADMIN_BASE_URL",
-                System.getenv().getOrDefault("ADMIN_BASE_URL", "http://localhost:18082")
-        );
-        this.kioskBaseUrl = System.getProperty(
-                "KIOSK_BASE_URL",
-                System.getenv().getOrDefault("KIOSK_BASE_URL", "http://localhost:18081")
-        );
+    public ProductListE2ESteps(TestConfiguration testConfiguration) {
+        this.testConfiguration = testConfiguration;
     }
 
     @Given("Admin에서 로그인을 한다")
     public void adminLogin() {
         Response loginResponse = given()
-                .baseUri(adminBaseUrl)
+                .baseUri(testConfiguration.getAdminBaseUrl())
                 .contentType("application/json")
                 .body("{\"username\":\"admin\",\"password\":\"password\"}")
                 .when()
@@ -54,7 +47,7 @@ public class ProductListE2ESteps {
 
     @When("Kiosk에서 상품 목록을 요청한다")
     public void requestProductList() {
-        productListResponse = createAuthenticatedRequest(kioskBaseUrl)
+        productListResponse = createAuthenticatedRequest(testConfiguration.getKioskBaseUrl())
                 .when()
                 .get("/api/products");
 

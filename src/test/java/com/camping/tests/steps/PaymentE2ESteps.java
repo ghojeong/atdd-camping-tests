@@ -1,5 +1,6 @@
 package com.camping.tests.steps;
 
+import com.camping.tests.config.TestConfiguration;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -17,30 +18,22 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class PaymentE2ESteps {
-    private final String adminBaseUrl;
-    private final String kioskBaseUrl;
+    private final TestConfiguration testConfiguration;
     private Response paymentResponse;
     private Response confirmResponse;
     private String authToken;
     private String paymentKey;
     private String orderId;
 
-    public PaymentE2ESteps() {
-        this.adminBaseUrl = System.getProperty(
-                "ADMIN_BASE_URL",
-                System.getenv().getOrDefault("ADMIN_BASE_URL", "http://localhost:18082")
-        );
-        this.kioskBaseUrl = System.getProperty(
-                "KIOSK_BASE_URL",
-                System.getenv().getOrDefault("KIOSK_BASE_URL", "http://localhost:18081")
-        );
+    public PaymentE2ESteps(TestConfiguration testConfiguration) {
+        this.testConfiguration = testConfiguration;
     }
 
     private void ensureAuthenticated() {
         if (authToken != null) {
             return;
         }
-        authToken = performLogin(adminBaseUrl);
+        authToken = performLogin(testConfiguration.getAdminBaseUrl());
     }
 
     private RequestSpecification createAuthenticatedRequest(String baseUrl) {
@@ -70,7 +63,7 @@ public class PaymentE2ESteps {
     public void requestPayment() {
         String paymentRequestBody = createPaymentRequestBody(10000);
 
-        paymentResponse = createAuthenticatedRequest(kioskBaseUrl)
+        paymentResponse = createAuthenticatedRequest(testConfiguration.getKioskBaseUrl())
                 .body(paymentRequestBody)
                 .when()
                 .post("/api/payments");
@@ -83,7 +76,7 @@ public class PaymentE2ESteps {
     public void requestFailedPayment() {
         String paymentRequestBody = createPaymentRequestBody(99999);
 
-        paymentResponse = createAuthenticatedRequest(kioskBaseUrl)
+        paymentResponse = createAuthenticatedRequest(testConfiguration.getKioskBaseUrl())
                 .body(paymentRequestBody)
                 .when()
                 .post("/api/payments");
@@ -95,7 +88,7 @@ public class PaymentE2ESteps {
     public void requestPaymentConfirm() {
         String confirmRequestBody = createConfirmRequestBody(paymentKey, orderId, 10000);
 
-        confirmResponse = createAuthenticatedRequest(kioskBaseUrl)
+        confirmResponse = createAuthenticatedRequest(testConfiguration.getKioskBaseUrl())
                 .body(confirmRequestBody)
                 .when()
                 .post("/api/payments/confirm");
@@ -107,7 +100,7 @@ public class PaymentE2ESteps {
     public void requestFailedPaymentConfirm() {
         String confirmRequestBody = createConfirmRequestBody(paymentKey, orderId, 99999);
 
-        confirmResponse = createAuthenticatedRequest(kioskBaseUrl)
+        confirmResponse = createAuthenticatedRequest(testConfiguration.getKioskBaseUrl())
                 .body(confirmRequestBody)
                 .when()
                 .post("/api/payments/confirm");

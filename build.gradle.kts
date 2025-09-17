@@ -18,6 +18,7 @@ dependencies {
     // Cucumber
     testImplementation("io.cucumber:cucumber-java:$cucumberVersion")
     testImplementation("io.cucumber:cucumber-junit-platform-engine:$cucumberVersion")
+    testImplementation("io.cucumber:cucumber-picocontainer:$cucumberVersion")
 
     // RestAssured
     testImplementation("io.rest-assured:rest-assured:${restAssuredVersion}")
