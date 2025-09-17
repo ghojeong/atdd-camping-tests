@@ -106,95 +106,44 @@ tasks.register<Exec>("appsLogs") {
     )
 }
 
+fun createCloneRepositoryTask(taskName: String, serviceName: String, repoUrl: String, branch: String = "main") {
+    tasks.register<Exec>(taskName) {
+        group = "setup"
+        description = "Clone $serviceName repository"
+        doFirst {
+            delete("repos/atdd-camping-$serviceName")
+            mkdir("repos")
+        }
+        commandLine(
+            "git", "clone",
+            "--branch", branch,
+            "--single-branch",
+            "--depth", "1",
+            repoUrl,
+            "repos/atdd-camping-$serviceName"
+        )
+        doLast {
+            copy {
+                from("infra/configs/$serviceName-application.yml")
+                into("repos/atdd-camping-$serviceName/src/main/resources")
+                rename { "application.yml" }
+            }
+            copy {
+                from("infra/configs/$serviceName-build.gradle")
+                into("repos/atdd-camping-$serviceName")
+                rename { "build.gradle" }
+            }
+        }
+    }
+}
+
+createCloneRepositoryTask("cloneKiosk", "kiosk", "https://github.com/next-step/atdd-camping-kiosk.git")
+createCloneRepositoryTask("cloneAdmin", "admin", "https://github.com/next-step/atdd-camping-admin.git")
+createCloneRepositoryTask("cloneReservation", "reservation", "https://github.com/next-step/atdd-camping-reservation.git")
+
 tasks.register("cloneRepos") {
     group = "setup"
     description = "Clone all required repositories"
     dependsOn("cloneKiosk", "cloneAdmin", "cloneReservation")
 }
 
-tasks.register<Exec>("cloneKiosk") {
-    group = "setup"
-    description = "Clone kiosk repository"
-    doFirst {
-        delete("repos/atdd-camping-kiosk")
-        mkdir("repos")
-    }
-    commandLine(
-        "git", "clone",
-        "--branch", "main",
-        "--single-branch",
-        "--depth", "1",
-        "https://github.com/next-step/atdd-camping-kiosk.git",
-        "repos/atdd-camping-kiosk"
-    )
-    doLast {
-        copy {
-            from("infra/configs/kiosk-application.yml")
-            into("repos/atdd-camping-kiosk/src/main/resources")
-            rename { "application.yml" }
-        }
-        copy {
-            from("infra/configs/kiosk-build.gradle")
-            into("repos/atdd-camping-kiosk")
-            rename { "build.gradle" }
-        }
-    }
-}
-
-tasks.register<Exec>("cloneAdmin") {
-    group = "setup"
-    description = "Clone admin repository"
-    doFirst {
-        delete("repos/atdd-camping-admin")
-        mkdir("repos")
-    }
-    commandLine(
-        "git", "clone",
-        "--branch", "main",
-        "--single-branch",
-        "--depth", "1",
-        "https://github.com/next-step/atdd-camping-admin.git",
-        "repos/atdd-camping-admin"
-    )
-    doLast {
-        copy {
-            from("infra/configs/admin-application.yml")
-            into("repos/atdd-camping-admin/src/main/resources")
-            rename { "application.yml" }
-        }
-        copy {
-            from("infra/configs/admin-build.gradle")
-            into("repos/atdd-camping-admin")
-            rename { "build.gradle" }
-        }
-    }
-}
-
-tasks.register<Exec>("cloneReservation") {
-    group = "setup"
-    description = "Clone reservation repository"
-    doFirst {
-        delete("repos/atdd-camping-reservation")
-        mkdir("repos")
-    }
-    commandLine(
-        "git", "clone",
-        "--branch", "main",
-        "--single-branch",
-        "--depth", "1",
-        "https://github.com/next-step/atdd-camping-reservation.git",
-        "repos/atdd-camping-reservation"
-    )
-    doLast {
-        copy {
-            from("infra/configs/reservation-application.yml")
-            into("repos/atdd-camping-reservation/src/main/resources")
-            rename { "application.yml" }
-        }
-        copy {
-            from("infra/configs/reservation-build.gradle")
-            into("repos/atdd-camping-reservation")
-            rename { "build.gradle" }
-        }
-    }
-}
