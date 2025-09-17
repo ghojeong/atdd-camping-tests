@@ -126,7 +126,7 @@ fun createCloneRepositoryTask(taskName: String, serviceName: String, repoUrl: St
             copy {
                 from("infra/configs/$serviceName-application.yml")
                 into("repos/atdd-camping-$serviceName/src/main/resources")
-                rename { "application.yml" }
+                rename { "application-atdd.yml" }
             }
             copy {
                 from("infra/configs/$serviceName-build.gradle")
@@ -137,9 +137,9 @@ fun createCloneRepositoryTask(taskName: String, serviceName: String, repoUrl: St
     }
 }
 
-createCloneRepositoryTask("cloneKiosk", "kiosk", "https://github.com/next-step/atdd-camping-kiosk.git")
-createCloneRepositoryTask("cloneAdmin", "admin", "https://github.com/next-step/atdd-camping-admin.git")
-createCloneRepositoryTask("cloneReservation", "reservation", "https://github.com/next-step/atdd-camping-reservation.git")
+createCloneRepositoryTask("cloneKiosk", "kiosk", "https://github.com/ghojeong/atdd-camping-kiosk.git", "msa")
+createCloneRepositoryTask("cloneAdmin", "admin", "https://github.com/ghojeong/atdd-camping-admin.git", "msa")
+createCloneRepositoryTask("cloneReservation", "reservation", "https://github.com/ghojeong/atdd-camping-reservation.git", "msa")
 
 tasks.register("cloneRepos") {
     group = "setup"
