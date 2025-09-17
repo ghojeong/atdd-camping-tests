@@ -20,6 +20,10 @@ spring:
       hibernate:
         format_sql: true
 
+  sql:
+    init:
+      mode: never
+
 kiosk:
   admin:
     base-url: ${KIOSK_ADMIN_BASE_URL:http://localhost:8080}
