@@ -5,9 +5,27 @@ import io.restassured.response.Response;
 
 public class CommonSteps {
     private static Response currentResponse;
+    private static String sharedPaymentKey;
+    private static String sharedOrderId;
 
     public static void setCurrentResponse(Response response) {
         currentResponse = response;
+    }
+
+    public static String getSharedPaymentKey() {
+        return sharedPaymentKey;
+    }
+
+    public static void setSharedPaymentKey(String paymentKey) {
+        sharedPaymentKey = paymentKey;
+    }
+
+    public static String getSharedOrderId() {
+        return sharedOrderId;
+    }
+
+    public static void setSharedOrderId(String orderId) {
+        sharedOrderId = orderId;
     }
 
     @Then("성공 응답을 받는다")

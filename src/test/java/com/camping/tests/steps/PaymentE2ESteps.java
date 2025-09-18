@@ -49,6 +49,10 @@ public class PaymentE2ESteps {
         if (paymentResponse.statusCode() == 200) {
             paymentKey = paymentResponse.jsonPath().getString("paymentKey");
             orderId = paymentResponse.jsonPath().getString("orderId");
+
+            // Share payment info with other step classes
+            CommonSteps.setSharedPaymentKey(paymentKey);
+            CommonSteps.setSharedOrderId(orderId);
         }
     }
 
