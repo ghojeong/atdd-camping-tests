@@ -17,6 +17,8 @@ services:
       - "3306:3306"
     networks:
       - atdd-net
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-psecret"]
       interval: 5s

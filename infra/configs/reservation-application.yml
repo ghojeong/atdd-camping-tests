@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: camping-reservation-legacy
+
+  datasource:
+    url: jdbc:mysql://atdd-db:3306/atdd?characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: secret
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true
+
+  sql:
+    init:
+      mode: never
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.camping: DEBUG

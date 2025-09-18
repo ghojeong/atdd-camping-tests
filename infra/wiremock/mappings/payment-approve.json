@@ -9,8 +9,8 @@
       "Content-Type": "application/json"
     },
     "jsonBody": {
-      "paymentKey": "pay_mock",
-      "orderId": "ord_mock",
+      "paymentKey": "pay_wiremock_success",
+      "orderId": "ord_wiremock_success",
       "status": "APPROVED"
     }
   }

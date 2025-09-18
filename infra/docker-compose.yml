@@ -1,10 +1,61 @@
+networks:
+  atdd-net:
+    name: atdd-net
+    external: true
+
 services:
   kiosk:
     build:
       context: ../repos/atdd-camping-kiosk
-      dockerfile: ../../infra/dockerfiles/Dockerfile-kiosk
+      dockerfile: ../../infra/dockerfiles/Dockerfile
     ports:
       - "18081:8080"
     environment:
-      - SPRING_PROFILES_ACTIVE=local
+      - SPRING_PROFILES_ACTIVE=atdd
       - SERVER_PORT=8080
+      - KIOSK_ADMIN_BASE_URL=http://admin:8080
+      - KIOSK_PAYMENT_BASE_URL=http://payments-mock:8080
+      - SPRING_DATASOURCE_URL=jdbc:mysql://atdd-db:3306/atdd?characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=secret
+    networks:
+      - atdd-net
+
+  admin:
+    build:
+      context: ../repos/atdd-camping-admin
+      dockerfile: ../../infra/dockerfiles/Dockerfile
+    ports:
+      - "18082:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=atdd
+      - SERVER_PORT=8080
+      - SPRING_DATASOURCE_URL=jdbc:mysql://atdd-db:3306/atdd?characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=secret
+    networks:
+      - atdd-net
+
+  reservation:
+    build:
+      context: ../repos/atdd-camping-reservation
+      dockerfile: ../../infra/dockerfiles/Dockerfile
+    ports:
+      - "18083:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=atdd
+      - SERVER_PORT=8080
+      - SPRING_DATASOURCE_URL=jdbc:mysql://atdd-db:3306/atdd?characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=secret
+    networks:
+      - atdd-net
+
+  payments-mock:
+    image: wiremock/wiremock:latest
+    ports:
+      - "18090:8080"
+    volumes:
+      - ./wiremock/mappings:/home/wiremock/mappings
+    networks:
+      - atdd-net

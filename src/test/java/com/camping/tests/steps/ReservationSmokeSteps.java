@@ -8,16 +8,16 @@ import io.restassured.response.Response;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class KioskSmokeSteps {
+public class ReservationSmokeSteps {
     private final TestConfiguration testConfiguration;
 
-    public KioskSmokeSteps(TestConfiguration testConfiguration) {
+    public ReservationSmokeSteps(TestConfiguration testConfiguration) {
         this.testConfiguration = testConfiguration;
-        RestAssured.baseURI = testConfiguration.getKioskBaseUrl();
+        RestAssured.baseURI = testConfiguration.getReservationBaseUrl();
     }
 
-    @When("Kiosk 서비스의 헬스 체크를 요청한다")
-    public void kioskHealthCheck() {
+    @When("Reservation 서비스의 헬스 체크를 요청한다")
+    public void reservationHealthCheck() {
         Response response = given().when().get("/");
         assertNotNull(response, "응답이 null입니다");
         CommonSteps.setCurrentResponse(response);

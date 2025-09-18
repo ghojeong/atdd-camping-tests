@@ -18,6 +18,7 @@ dependencies {
     // Cucumber
     testImplementation("io.cucumber:cucumber-java:$cucumberVersion")
     testImplementation("io.cucumber:cucumber-junit-platform-engine:$cucumberVersion")
+    testImplementation("io.cucumber:cucumber-picocontainer:$cucumberVersion")
 
     // RestAssured
     testImplementation("io.rest-assured:rest-assured:${restAssuredVersion}")
@@ -37,20 +38,45 @@ tasks.test {
     useJUnitPlatform()
 }
 
-// Docker Compose tasks for kiosk
-tasks.register<Exec>("kioskComposeUp") {
+tasks.register<Exec>("infraUp") {
     group = "infra"
-    description = "Run kiosk via docker compose (build + up)"
+    description = "Start infrastructure (database with data initialization)"
+    commandLine(
+        "docker", "compose",
+        "-f", "infra/docker-compose-infra.yml",
+        "up", "-d"
+    )
+}
+
+tasks.register<Exec>("infraDown") {
+    group = "infra"
+    description = "Stop infrastructure and remove volumes"
+    commandLine(
+        "docker", "compose",
+        "-f", "infra/docker-compose-infra.yml",
+        "down", "-v"
+    )
+}
+
+tasks.register<Exec>("appsUp") {
+    group = "infra"
+    description = "Start application services (depends on infrastructure)"
+    dependsOn("infraUp")
+    mustRunAfter("infraUp")
     commandLine(
         "docker", "compose",
         "-f", "infra/docker-compose.yml",
         "up", "-d", "--build"
     )
+    doFirst {
+        // Wait for infrastructure to be ready
+        Thread.sleep(10000)
+    }
 }
 
-tasks.register<Exec>("kioskComposeDown") {
+tasks.register<Exec>("appsDown") {
     group = "infra"
-    description = "Stop kiosk compose and remove volumes"
+    description = "Stop application services"
     commandLine(
         "docker", "compose",
         "-f", "infra/docker-compose.yml",
@@ -58,12 +84,67 @@ tasks.register<Exec>("kioskComposeDown") {
     )
 }
 
-tasks.register<Exec>("kioskComposeLogs") {
+tasks.register("allUp") {
     group = "infra"
-    description = "Show kiosk compose logs"
+    description = "Start infrastructure and all application services"
+    dependsOn("infraUp", "appsUp")
+    mustRunAfter("infraUp")
+}
+
+tasks.register("allDown") {
+    group = "infra"
+    description = "Stop all services and remove volumes"
+    dependsOn("appsDown", "infraDown")
+}
+
+tasks.register<Exec>("appsLogs") {
+    group = "infra"
+    description = "Show application services logs"
     commandLine(
         "docker", "compose",
         "-f", "infra/docker-compose.yml",
         "logs", "-f"
     )
 }
+
+fun createCloneRepositoryTask(taskName: String, serviceName: String, repoUrl: String, branch: String = "main") {
+    tasks.register<Exec>(taskName) {
+        group = "setup"
+        description = "Clone $serviceName repository"
+        doFirst {
+            delete("repos/atdd-camping-$serviceName")
+            mkdir("repos")
+        }
+        commandLine(
+            "git", "clone",
+            "--branch", branch,
+            "--single-branch",
+            "--depth", "1",
+            repoUrl,
+            "repos/atdd-camping-$serviceName"
+        )
+        doLast {
+            copy {
+                from("infra/configs/$serviceName-application.yml")
+                into("repos/atdd-camping-$serviceName/src/main/resources")
+                rename { "application-atdd.yml" }
+            }
+            copy {
+                from("infra/configs/$serviceName-build.gradle")
+                into("repos/atdd-camping-$serviceName")
+                rename { "build.gradle" }
+            }
+        }
+    }
+}
+
+createCloneRepositoryTask("cloneKiosk", "kiosk", "https://github.com/ghojeong/atdd-camping-kiosk.git", "msa")
+createCloneRepositoryTask("cloneAdmin", "admin", "https://github.com/ghojeong/atdd-camping-admin.git", "msa")
+createCloneRepositoryTask("cloneReservation", "reservation", "https://github.com/ghojeong/atdd-camping-reservation.git", "msa")
+
+tasks.register("cloneRepos") {
+    group = "setup"
+    description = "Clone all required repositories"
+    dependsOn("cloneKiosk", "cloneAdmin", "cloneReservation")
+}
+
